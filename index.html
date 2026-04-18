@@ -1,1 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evanston ADU Financial Calculator</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #334155;
+            --border: #e2e8f0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            color: var(--primary);
+            margin-bottom: 5px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 768px) {
+            .grid { grid-template-columns: 1fr; }
+        }
+        .card {
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            border: 1px solid var(--border);
+            margin-bottom: 20px;
+        }
+        .card h2 {
+            margin-top: 0;
+            font-size: 1.25rem;
+            color: var(--primary);
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 5px;
+            font-size: 0.9rem;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 1rem;
+        }
+        .results-box {
+            background: #eff6ff;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #bfdbfe;
+        }
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 1rem;
+        }
+        .result-row.bold {
+            font-weight: bold;
+            color: var(--primary);
+            border-top: 1px solid #bfdbfe;
+            padding-top: 10px;
+            margin-top: 5px;
+            font-size: 1.15rem;
+        }
+        .note {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-top: 4px;
+        }
+        .warning {
+            color: #b91c1c;
+            background: #fef2f2;
+            padding: 10px;
+            border-left: 4px solid #ef4444;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+            display: none;
+        }
+    </style>
+</head>
+<body>
 
+<div class="container">
+    <div class="header">
+        <h1>Evanston ADU Financial Calculator</h1>
+        <p>Estimate feasibility, construction costs, and cash flow for Accessory Dwelling Units in Evanston, IL.</p>
+    </div>
+
+    <div class="grid">
+        <div>
+            <div class="card">
+                <h2>1. Project Basics & Location</h2>
+                <div class="form-group">
+                    <label>Monthly Rent Expected ($)</label>
+                    <input type="number" id="monthlyRent" value="1800" oninput="calculate()">
+                </div>
+                <div class="form-group">
+                    <label>ADU Type</label>
+                    <select id="aduType" onchange="calculate()">
+                        <option value="basement">Basement / Interior Conversion</option>
+                        <option value="garage">Garage Conversion</option>
+                        <option value="addition">Addition to Existing</option>
+                        <option value="detached" selected>Detached Coach House</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Finish Level</label>
+                    <select id="finishLevel" onchange="calculate()">
+                        <option value="basic">Basic (Rental-grade)</option>
+                        <option value="mid" selected>Mid-range</option>
+                        <option value="high">High-end</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Unit Size (sq ft)</label>
+                    <input type="number" id="unitSize" value="600" oninput="calculate()">
+                    <div id="sizeWarning" class="warning">Evanston typically restricts detached ADUs to a maximum of 1,000 sq ft.</div>
+                </div>
+                <div class="form-group">
+                    <label>Site Conditions</label>
+                    <select id="siteConditions" onchange="calculate()">
+                        <option value="0" selected>Standard / Flat Lot (+$0)</option>
+                        <option value="12000">Sloped / Drainage Issues (+$12k)</option>
+                        <option value="25000">Poor Soil / Foundation Work (+$25k)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Utility Connection</label>
+                    <select id="utility" onchange="calculate()">
+                        <option value="8000">Share Existing (+$8k)</option>
+                        <option value="18000" selected>Separate Meter — Typical (+$18k)</option>
+                        <option value="30000">Full New Service (+$30k)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>2. Financing & Operations</h2>
+                <div class="form-group">
+                    <label>Loan Amount ($)</label>
+                    <input type="number" id="loanAmount" value="150000" oninput="calculate()">
+                    <div class="note">Enter $0 if paying cash.</div>
+                </div>
+                <div class="form-group">
+                    <label>Interest Rate (%)</label>
+                    <input type="number" step="0.1" id="interestRate" value="7.5" oninput="calculate()">
+                </div>
+                <div class="form-group">
+                    <label>Loan Term (Years)</label>
+                    <input type="number" id="loanTerm" value="15" oninput="calculate()">
+                </div>
+                <div class="form-group">
+                    <label>Annual Property Tax Increase ($)</label>
+                    <input type="number" id="taxIncrease" value="3000" oninput="calculate()">
+                </div>
+                <div class="form-group">
+                    <label>Property Management Fee (%)</label>
+                    <input type="number" id="propMgmt" value="0" oninput="calculate()">
+                    <div class="note">Enter 0 for self-managed, or ~8-10% for professional management.</div>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <div class="card results-box">
+                <h2>Sources & Uses (Costs)</h2>
+                <div class="result-row">
+                    <span>Base Construction Hard Costs</span>
+                    <span id="resHardCosts">$0</span>
+                </div>
+                <div class="result-row">
+                    <span>Site & Utility Prep</span>
+                    <span id="resSiteUtility">$0</span>
+                </div>
+                <div class="result-row">
+                    <span>Soft Costs (Permits, Arch - 12%)</span>
+                    <span id="resSoftCosts">$0</span>
+                </div>
+                <div class="result-row">
+                    <span>Contingency (5%)</span>
+                    <span id="resContingency">$0</span>
+                </div>
+                <div class="result-row bold">
+                    <span>Total Estimated Project Cost</span>
+                    <span id="resTotalCost">$0</span>
+                </div>
+                <div class="result-row" style="margin-top: 15px; color: var(--primary);">
+                    <span>Financed Amount</span>
+                    <span id="resLoanAmount">$0</span>
+                </div>
+                <div class="result-row" style="color: var(--primary);">
+                    <span>Cash Needed Out-of-Pocket</span>
+                    <span id="resCashNeeded">$0</span>
+                </div>
+            </div>
+
+            <div class="card results-box">
+                <h2>Annual Cash Flow Breakdown</h2>
+                <div class="result-row">
+                    <span>Gross Rental Income (Assumes 7% Vacancy)</span>
+                    <span id="resGrossIncome">$0</span>
+                </div>
+                <div class="result-row">
+                    <span>Operating Expenses (Tax, Insur, Maint, Mgmt)</span>
+                    <span id="resOpex">-$0</span>
+                </div>
+                <div class="result-row">
+                    <span>Net Operating Income (NOI)</span>
+                    <span id="resNOI">$0</span>
+                </div>
+                <div class="result-row">
+                    <span>Annual Debt Service (Loan Payments)</span>
+                    <span id="resDebtService">-$0</span>
+                </div>
+                <div class="result-row bold">
+                    <span>Net Annual Cash Flow</span>
+                    <span id="resCashFlow">$0</span>
+                </div>
+                <div class="result-row">
+                    <span>Net Monthly Cash Flow</span>
+                    <span id="resMonthlyCashFlow">$0</span>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Evanston ADU Rules Overview</h2>
+                <ul style="font-size: 0.9rem; margin-top: 0; padding-left: 20px;">
+                    <li><strong>Max Size:</strong> Detached ADUs must be less than 1,000 sq ft. Interior conversions are exempt from this limit if on a single floor.</li>
+                    <li><strong>Max Height:</strong> Up to 28 feet for sloped roofs, and 20 feet for flat roofs.</li>
+                    <li><strong>Parking:</strong> No extra parking required for an ADU. Existing off-street parking must be maintained.</li>
+                    <li><strong>Occupancy:</strong> The City of Evanston does <em>not</em> mandate owner occupancy for the primary structure.</li>
+                </ul>
+                <div class="note">Source: Evanston 2020 Zoning Ordinance Updates.</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const costsPerSqFt = {
+        basement: { basic: 130, mid: 190, high: 270 },
+        garage: { basic: 100, mid: 160, high: 240 },
+        addition: { basic: 175, mid: 230, high: 310 },
+        detached: { basic: 200, mid: 270, high: 350 }
+    };
+
+    function fmt(num) {
+        return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(num);
+    }
+
+    function calculate() {
+        // Inputs
+        const rent = parseFloat(document.getElementById('monthlyRent').value) || 0;
+        const type = document.getElementById('aduType').value;
+        const finish = document.getElementById('finishLevel').value;
+        const size = parseFloat(document.getElementById('unitSize').value) || 0;
+        const site = parseFloat(document.getElementById('siteConditions').value) || 0;
+        const utility = parseFloat(document.getElementById('utility').value) || 0;
+        const loanAmt = parseFloat(document.getElementById('loanAmount').value) || 0;
+        const rate = parseFloat(document.getElementById('interestRate').value) / 100 || 0;
+        const term = parseFloat(document.getElementById('loanTerm').value) || 0;
+        const taxInc = parseFloat(document.getElementById('taxIncrease').value) || 0;
+        const mgmtPct = parseFloat(document.getElementById('propMgmt').value) / 100 || 0;
+
+        // Size warning
+        if (size > 1000 && (type === 'detached' || type === 'garage')) {
+            document.getElementById('sizeWarning').style.display = 'block';
+        } else {
+            document.getElementById('sizeWarning').style.display = 'none';
+        }
+
+        // 1. Costs
+        const baseHardCost = size * costsPerSqFt[type][finish];
+        const siteUtil = site + utility;
+        const subTotalHard = baseHardCost + siteUtil;
+        const softCost = subTotalHard * 0.12;
+        const contingency = subTotalHard * 0.05;
+        const totalCost = subTotalHard + softCost + contingency;
+        
+        let actualLoan = loanAmt;
+        if(actualLoan > totalCost) actualLoan = totalCost; // Cap loan at total cost
+        const cashNeeded = totalCost - actualLoan;
+
+        // 2. Revenues & Opex
+        const grossIncome = (rent * 12) * 0.93; // 7% vacancy
+        const mgmtFee = grossIncome * mgmtPct;
+        const insurance = 1200; // Flat estimate
+        const maintenance = 2400; // Flat reserve estimate
+        const totalOpex = taxInc + mgmtFee + insurance + maintenance;
+        const noi = grossIncome - totalOpex;
+
+        // 3. Debt Service (Monthly PMT * 12)
+        let annualDebtService = 0;
+        if (actualLoan > 0 && rate > 0 && term > 0) {
+            const monthlyRate = rate / 12;
+            const numPayments = term * 12;
+            const pmt = (actualLoan * monthlyRate) / (1 - Math.pow(1 + monthlyRate, -numPayments));
+            annualDebtService = pmt * 12;
+        }
+
+        const cashFlow = noi - annualDebtService;
+
+        // Populate UI
+        document.getElementById('resHardCosts').innerText = fmt(baseHardCost);
+        document.getElementById('resSiteUtility').innerText = fmt(siteUtil);
+        document.getElementById('resSoftCosts').innerText = fmt(softCost);
+        document.getElementById('resContingency').innerText = fmt(contingency);
+        document.getElementById('resTotalCost').innerText = fmt(totalCost);
+        document.getElementById('resLoanAmount').innerText = fmt(actualLoan);
+        document.getElementById('resCashNeeded').innerText = fmt(cashNeeded);
+
+        document.getElementById('resGrossIncome').innerText = fmt(grossIncome);
+        document.getElementById('resOpex').innerText = "-" + fmt(totalOpex);
+        document.getElementById('resNOI').innerText = fmt(noi);
+        document.getElementById('resDebtService').innerText = "-" + fmt(annualDebtService);
+        
+        const cfElement = document.getElementById('resCashFlow');
+        cfElement.innerText = fmt(cashFlow);
+        cfElement.style.color = cashFlow >= 0 ? "green" : "red";
+        
+        const mcfElement = document.getElementById('resMonthlyCashFlow');
+        mcfElement.innerText = fmt(cashFlow / 12);
+        mcfElement.style.color = cashFlow >= 0 ? "green" : "red";
+    }
+
+    // Run on load
+    window.onload = calculate;
+</script>
+
+</body>
+</html>
